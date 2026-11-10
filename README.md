@@ -26,6 +26,7 @@ The launcher checks port `8080`, reuses a healthy SatelliteCall server if availa
 3. Create or use a device account, then share the contact code shown in Internet mode to place a call. Keep the host’s server and ngrok sessions running.
 
 The tunnel forwards call signalling. WebRTC carries the audio directly when the two phones can connect. If a direct audio connection fails, the backend can provide TURN credentials through the `SATCALL_TURN_URLS` and `SATCALL_TURN_SECRET` environment variables.
+debuge zip file me apk file he, server link us me add karo dono app me app A me bhi same link name alag or app B me same link name alag, 20 uniq is banega vo add karne se aap call kar paoge, Ngrok Hotspot on rakhna he 
 
 ## Database and logs
 
