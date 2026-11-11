@@ -1,0 +1,693 @@
+SATELLITECALL — TERMUX + ANDROID APP इस्तेमाल करने की पूरी हिंदी गाइड
+तैयार किया गया: 11 नवंबर 2026
+Yash K Pathak के GitHub प्रोजेक्ट के लिए
+
+GitHub:
+https://github.com/ykpathak126-hue/satellitecall-termux-ngrok
+
+यह गाइड किस आधार पर बनी है?
+GitHub के README.md, start.py और server.py की जाँच की गई। GitHub से
+SatelliteCall-debug.zip डाउनलोड करके खोला गया। उसके अंदर केवल
+SatelliteCall-debug.apk मिला। उसका SHA-256 आपके पहले दिए APK से मेल खाता है।
+ऐप का नाम SatelliteCall और version 0.1.0-beta है।
+
+यह उपयोग की गाइड है। असली Android फोन पर इस सत्र में आवाज़ वाली कॉल या
+ngrok का चलना जाँचा नहीं गया है। नीचे बताए निर्देश कोड और APK की जाँच पर
+आधारित हैं। जहाँ फोन की compatibility पर निर्भरता है, वहाँ वह साफ लिखी है।
+
+============================================================
+1. सबसे पहले समझें: कौन-सी चीज किस काम की है?
+============================================================
+
+SatelliteCall Android app:
+यही दोनों फोन पर install होगी। इसी से contact code मिलेगा और कॉल होगी।
+
+Termux:
+होस्ट फोन पर Python server और ngrok चलाने के लिए।
+
+server.py:
+डिवाइस account, contact code, कॉल लगाने/स्वीकार करने जैसे signalling काम।
+
+start.py:
+Python server और सही ngrok tunnel चालू करता या पहले से चल रहे सही server
+और tunnel का इस्तेमाल करता है। फिर ऐप में डालने वाला HTTPS address दिखाता है।
+
+ngrok:
+होस्ट फोन के local server को Internet से पहुँचने योग्य HTTPS address देता है।
+यह अपने आप satellite connection या audio relay नहीं बनाता।
+
+दो फोन की भूमिका:
+फोन A: आपका फोन; इस पर Termux और SatelliteCall दोनों हो सकते हैं।
+फोन B: दूसरे व्यक्ति का फोन; इस पर SatelliteCall और Internet चाहिए।
+
+फोन B पर Termux चलाना जरूरी नहीं, यदि दोनों उसी होस्ट server को इस्तेमाल करें।
+चाहें तो server तीसरे फोन या किसी compatible computer पर भी चल सकता है।
+
+दोनों फोन पर Internet जरूरी है। दोनों एक ही Wi-Fi पर हों, यह जरूरी नहीं।
+वे अलग शहरों में, अलग Wi-Fi या mobile data पर भी हो सकते हैं, बशर्ते server
+reachable हो और network audio connection की अनुमति देता हो।
+
+Hotspot जरूरी है क्या?
+नहीं। Hotspot केवल Internet बाँटने का एक तरीका है। आपके README में hotspot
+का उल्लेख है, लेकिन code में hotspot को अनिवार्य करने की शर्त नहीं मिली।
+यदि फोन B आपके hotspot से Internet ले रहा है तो उस स्थिति में hotspot चालू रखें।
+
+Satellite के बारे में:
+इस build में सीधी satellite radio calling activate करने की सुविधा नहीं मिली।
+Satellite Terminal नाम का विकल्प audio bitrate घटाता है। असली satellite IP
+connection के लिए अलग authorised terminal और suitable data plan चाहिए।
+सामान्य उपयोग के लिए Wi-Fi/mobile Internet और Automatic profile रखें।
+
+============================================================
+2. GitHub से सही ZIP और APK कैसे डाउनलोड करें?
+============================================================
+
+1) फोन के browser में अपना GitHub repo खोलें:
+https://github.com/ykpathak126-hue/satellitecall-termux-ngrok
+
+2) SatelliteCall-debug.zip पर दबाएँ।
+3) Download raw file / download icon का इस्तेमाल करके ZIP डाउनलोड करें।
+   GitHub के layout के हिसाब से download button का स्थान बदल सकता है।
+4) फोन की Files / My Files ऐप खोलें। Downloads में ZIP खोजें।
+5) ZIP को Extract करें। अंदर SatelliteCall-debug.apk मिलेगा।
+6) APK खोलकर Install करें।
+7) जरूरत हो तो Android द्वारा दिखाई गई उसी Files/browser ऐप की
+   “Install unknown apps” अनुमति दें। सामान्य सुरक्षा जाँच बंद न करें।
+8) यही APK फोन B पर भी install करें।
+
+सीधा debug ZIP download address:
+https://raw.githubusercontent.com/ykpathak126-hue/satellitecall-termux-ngrok/main/SatelliteCall-debug.zip
+
+ध्यान दें:
+ZIP install होने वाली app नहीं है। पहले extract करें, फिर अंदर का APK खोलें।
+SatelliteCall-Termux-Ngrok-GitHub.zip backend/setup files के लिए है;
+SatelliteCall-debug.zip में Android APK है।
+
+अगर पहले वाला app install है और update install नहीं होता:
+उसी package की अलग signing वाली app होने पर Android update रोक सकता है।
+बिना तैयारी पुराने app को uninstall न करें: local account/contacts/history
+खो सकते हैं। पहले अपने account और server की स्थिति समझें।
+
+============================================================
+3. होस्ट फोन पर Termux install करें
+============================================================
+
+Termux का official F-Droid page:
+https://f-droid.org/en/packages/com.termux/
+
+Termux install करके पहली बार खोलें। शुरुआती setup पूरा होने दें।
+नीचे की commands एक-एक करके चलाएँ। हर command के बाद Enter दबाएँ।
+Command के आगे कोई अतिरिक्त $ या > न लिखें।
+
+pkg update
+
+अगर confirmation माँगे तो संदेश पढ़कर Y और Enter दबाएँ। फिर:
+
+pkg install python git curl tar unzip
+
+अब versions जाँच सकते हैं:
+
+python --version
+
+git --version
+
+फोन के Downloads तक पहुँचने के लिए:
+
+termux-setup-storage
+
+Android permission dialog आए तो storage access अनुमति दें। अगर आपके फोन
+पर storage permission का व्यवहार अलग हो तो Android settings में Termux की
+अनुमति देखें। यह अनुमति मुख्यतः Downloads वाली files लेने/रखने के लिए है।
+Git से Termux के अपने home folder में project लेना इससे अलग काम है।
+
+============================================================
+4. GitHub project को Termux में लें
+============================================================
+
+सुझाया गया तरीका — Git clone:
+
+cd ~
+
+git clone https://github.com/ykpathak126-hue/satellitecall-termux-ngrok.git
+
+cd ~/satellitecall-termux-ngrok
+
+ls
+
+इस folder में start.py और server.py दिखने चाहिए। मौजूदा repo root में ये
+दोनों files हैं; Python server चलाने के लिए backend ZIP अलग से खोलना जरूरी नहीं।
+
+अगर clone पर “destination path already exists” आए:
+बार-बार clone न करें। पहले से बने folder में जाएँ:
+
+cd ~/satellitecall-termux-ngrok
+
+ls
+
+अगर आपने project का नाम या files बदले हैं तो आगे के commands में अपने असली
+folder का नाम लगाएँ। इस गाइड में default folder satellitecall-termux-ngrok है।
+
+वैकल्पिक तरीका — डाउनलोड की ZIP:
+अगर Git इस्तेमाल नहीं करना, backend ZIP को My Files से extract करें।
+termux-setup-storage के बाद Termux में उसके असली extracted folder में जाएँ।
+उदाहरण के लिए, केवल अगर आपने folder को सचमुच ऐसा नाम दिया है:
+
+cd ~/storage/downloads/SatelliteCall-Termux-Ngrok-GitHub
+
+ls
+
+यदि वहाँ start.py नहीं है तो सही अंदर वाले folder में जाएँ। “python start.py”
+उसी folder में चलना चाहिए जहाँ start.py और server.py मौजूद हों।
+
+वैकल्पिक: Git clone कर लिया हो तो APK भी वहीं से निकाल सकते हैं:
+
+cd ~/satellitecall-termux-ngrok
+
+unzip SatelliteCall-debug.zip -d ~/storage/downloads/SatelliteCall-APK
+
+फिर My Files > Downloads > SatelliteCall-APK में जाकर APK install करें।
+यह command चलाने से पहले storage access और ZIP की मौजूदगी जाँचें।
+
+============================================================
+5. ngrok install और account setup
+============================================================
+
+अगर ngrok पहले से चलता है तो दोबारा install करने की जरूरत नहीं। पहले जाँचें:
+
+ngrok version
+
+यदि version दिखता है तो नीचे वाले token/setup चरण पर जाएँ।
+अगर “command not found” मिले तो CLI install करें।
+
+Official download page:
+https://ngrok.com/download/linux
+
+ngrok account/dashboard:
+https://dashboard.ngrok.com/
+
+पहले अपने Termux environment का architecture देखें:
+
+uname -m
+
+यदि output aarch64 है:
+नीचे ARM64 package डाउनलोड करने का उदाहरण इस्तेमाल कर सकते हैं। यह official
+ngrok download host है; download URL उपलब्ध पाया गया। इसे आपके Android/Termux
+पर चलाकर सत्यापित नहीं किया गया है। Linux ARM64 binary का download मिलना,
+हर Android फोन पर उसके चलने की गारंटी नहीं है।
+
+mkdir -p ~/satcall-ngrok-install
+
+cd ~/satcall-ngrok-install
+
+curl -fL https://bin.ngrok.com/c/bNyj1mQVY4c/ngrok-v3-stable-linux-arm64.tgz -o ngrok.tgz
+
+डाउनलोड सफल हो तभी आगे चलें:
+
+tar -xzf ngrok.tgz
+
+chmod +x ngrok
+
+./ngrok version
+
+यदि version सही दिखे, Termux PATH में रखें:
+
+cp ngrok "$PREFIX/bin/ngrok"
+
+ngrok version
+
+यदि uname -m में aarch64 नहीं है:
+ऊपर वाला ARM64 package blindly न चलाएँ। Official download page से अपने
+environment के लिए सही architecture चुनें, फिर executable को Termux के
+अपने executable folder में रखें और “ngrok version” से जाँचें।
+Downloads/shared storage से binary सीधे चलाने पर permission समस्या आ सकती है;
+इसीलिए ऊपर Termux के home folder में download/extract किया गया है।
+
+अगर “Exec format error”, linker error या binary चलने की दूसरी समस्या मिले:
+architecture या Android compatibility समस्या हो सकती है। Random websites की
+binary से बदलने के बजाय official supported Linux/Windows computer पर यही
+Python server और ngrok चलाना एक विकल्प है। इस प्रोजेक्ट में ngrok installer
+या हर Termux version के लिए compatibility fix शामिल नहीं है।
+
+ngrok token जोड़ना:
+1) ngrok account में login करें।
+2) अपना authtoken लें।
+3) नीचे YOUR_OWN_NGROK_TOKEN की जगह अपना असली token डालें:
+
+ngrok config add-authtoken YOUR_OWN_NGROK_TOKEN
+
+YOUR_OWN_NGROK_TOKEN केवल placeholder है; इसे ज्यों का त्यों न चलाएँ।
+Token को इस guide, GitHub, screenshots, video या किसी public post में न रखें।
+Token को Android app के server address field में भी नहीं डालना है।
+
+============================================================
+6. Python server और ngrok एक साथ चालू करें
+============================================================
+
+अब वापस project folder में आएँ:
+
+cd ~/satellitecall-termux-ngrok
+
+python start.py
+
+इस project का server Python की standard library इस्तेमाल करता है। जाँची गई
+server files के लिए अलग “pip install flask” की जरूरत नहीं मिली।
+
+Launcher का सामान्य क्रम:
+1) Local port 8080 पर सही server चल रहा है या नहीं देखेगा।
+2) सही server नहीं मिला तो server.py चालू करेगा।
+3) उसी port का सही ngrok tunnel मिला तो उसे reuse करेगा।
+4) नहीं मिला तो नया tunnel शुरू करेगा।
+5) Public server health check करके HTTPS link दिखाएगा।
+
+सफल होने पर ऐसा संदेश मिल सकता है:
+
+Public server check pass. Dono phones mein ye HTTPS address use karo.
+
+उसके बाद final HTTPS address दिखेगा। वही असली address कॉपी करें।
+इस गाइड का example address आपकी चालू service नहीं है।
+
+अगर public check confirm नहीं हुआ:
+Link देखकर अकेले यह न मानें कि server चल गया। Browser health check करें।
+
+महत्वपूर्ण:
+“python start.py” चलाने के बाद Termux को बंद/Force stop न करें।
+होस्ट का Internet चालू रखें। ngrok और Python processes दोनों चलते रहने चाहिए।
+सिर्फ repository GitHub पर upload करने से server हमेशा online नहीं रहता।
+
+============================================================
+7. Link सही है या नहीं जाँचें
+============================================================
+
+मान लें launcher ने आपके लिए यह address दिखाया:
+https://example-host.ngrok-free.app
+
+यह सिर्फ उदाहरण है। हर जगह अपने launcher का असली address इस्तेमाल करें।
+
+Browser में जाँच:
+https://example-host.ngrok-free.app/healthz
+
+सही server का जवाब JSON में ऐसा होना चाहिए:
+{"ok":true}
+
+यदि warning page, login page, error या HTML आता है तो app अभी भी fail हो सकता
+है। केवल browser में किसी page का खुलना API की सफलता नहीं है।
+
+Android app में केवल यह base address डालना है:
+https://example-host.ngrok-free.app
+
+App में /healthz या /v1/register या दूसरा path नहीं डालना है।
+http:// नहीं, https:// इस्तेमाल करना है।
+GitHub repository URL को app का calling-server URL नहीं बनाना है।
+ngrok dashboard URL भी calling-server URL नहीं है।
+
+============================================================
+8. फोन A पर Android app setup
+============================================================
+
+1) SatelliteCall खोलें।
+2) शुरुआती screen पर “Set up this device” देखें।
+3) “HTTPS server address” में Termux का final base HTTPS link paste करें।
+4) “Display name” में अपना नाम या test name भरें, जैसे Yash A।
+   नाम 2 से 32 characters का होना चाहिए।
+5) “Create device account” दबाएँ।
+6) Account बनने पर Home screen खुलेगी।
+7) “YOUR PRIVATE CONTACT CODE” में आपका 20-character code दिखेगा।
+8) “Copy code” या “Share code” से उसे दूसरे फोन तक भेज सकते हैं।
+
+यह device account है। जाँचे गए build में phone OTP, mobile-number login या
+password login नहीं मिला। App बंद करके दोबारा खोलने पर स्थानीय saved session
+का इस्तेमाल होता है। App storage साफ करने या reinstall करने पर वह खो सकता है।
+
+============================================================
+9. फोन B पर वही setup करें
+============================================================
+
+1) फोन B पर भी उसी debug ZIP वाला APK install/open करें।
+2) “HTTPS server address” में फोन A वाला बिल्कुल वही address डालें।
+3) अलग पहचान के लिए नाम Yash B / Friend जैसा रखें।
+4) “Create device account” दबाएँ।
+5) फोन B को उसका अलग 20-character code मिलेगा।
+
+नाम अलग रखना पहचान में मदद करता है, लेकिन server unique display names की
+शर्त नहीं लगाता। असली पहचान अलग contact code से होती है।
+
+दोनों में same server address जरूरी है। सिर्फ app same होना पर्याप्त नहीं।
+अलग server पर बना account/code दूसरे server की directory में नहीं मिलेगा।
+
+============================================================
+10. Contact जोड़ें और पहली call करें
+============================================================
+
+उदाहरण:
+फोन A का code = AAAAAAAAAAAAAAAAAAAA
+फोन B का code = BBBBBBBBBBBBBBBBBBBB
+
+ये समझाने के लिए dummy codes हैं; इन्हें जोड़ने से असली contact नहीं मिलेगा।
+
+फोन A पर:
+1) फोन B से उसका असली code लें।
+2) Home में “Add contact by code” दबाएँ।
+3) “20-character contact code” में B का code paste करें।
+4) “Add” दबाएँ।
+5) Contact मिलने पर उसका नाम और “Call” button दिखेगा।
+
+फोन B पर:
+यदि B को भी A को call करना है तो A का असली code इसी तरह Add करें।
+A द्वारा B को call करने के लिए B में A को पहले से save करना जरूरी नहीं मिला;
+लेकिन दोनों तरफ save करना दोबारा call करने में सुविधाजनक है।
+
+अब call:
+1) दोनों फोन पर SatelliteCall खुला रखें।
+2) दोनों का Internet और host server चालू हो।
+3) फोन A पर B वाले contact के पास “Call” दबाएँ।
+4) Microphone permission आए तो अनुमति दें।
+5) फोन B पर incoming call screen आएगी।
+6) “Answer” दबाएँ और microphone अनुमति दें।
+7) Audio जुड़ने दें। “Voice connected” state आने और दोनों ओर आवाज़ सुनाई देने
+   पर ही वास्तविक सफल call मानें।
+8) फोन एक-दूसरे के बहुत पास हों तो speaker से echo आ सकता है; earpiece या
+   headset से test करें।
+9) बात खत्म होने पर “Hang up” दबाएँ।
+
+Incoming call नहीं लेनी हो तो “Decline” दबाएँ।
+Outgoing ringing cancel करनी हो तो “Cancel call” दबाएँ।
+
+इस beta में idle incoming calls के लिए app open रखने का निर्देश है। केवल
+notification permission देने से बंद app पर guaranteed ringing नहीं बनती।
+
+============================================================
+11. Call के दौरान buttons का मतलब
+============================================================
+
+Mute:
+अपना microphone mute करना। सामने वाले को आपकी आवाज़ भेजना बंद होता है।
+
+Unmute:
+अपना microphone फिर चालू करना।
+
+Speaker on / Speaker off:
+फोन speaker और सामान्य communication audio route के बीच बदलाव।
+
+Choose audio device:
+जहाँ उपलब्ध हो, earpiece/speaker/Bluetooth जैसे supported communication
+उपकरण चुनें। इस build में यह selector Android API 31+ पर दिखता है।
+Bluetooth के लिए Nearby devices / BLUETOOTH_CONNECT अनुमति लग सकती है।
+पहले Android settings में headset pair/connect करें।
+
+Hang up:
+कॉल समाप्त करना।
+
+RTT / jitter / lost:
+Connection के technical indicators हैं। बहुत खराब network या routing समस्या
+को सिर्फ profile बदलने से हमेशा ठीक नहीं किया जा सकता।
+
+============================================================
+12. Home, History और Network tabs
+============================================================
+
+Home:
+अपना code copy/share करना, contact जोड़ना, Call और Remove।
+“Remove” केवल उस फोन की contact list से contact हटाता है।
+यह दूसरे व्यक्ति का server account delete नहीं करता।
+
+History:
+फोन पर saved recent call activity दिखती है। खाली हो तो “Call activity will
+appear here.” दिख सकता है। Activity मौजूद होने पर “Clear history” मिलता है।
+यह app audio recording नहीं है। जाँचे गए build में audio recording feature
+नहीं मिला।
+
+Network:
+Connection status, audio profiles, external terminal guidance और account
+privacy/deletion controls। नीचे के options देखने के लिए scroll करें।
+
+============================================================
+13. Audio profile कौन-सा चुनें?
+============================================================
+
+Automatic · 28 kbit/s:
+पहले यही चुनें। सामान्य Wi-Fi/mobile Internet के लिए शुरुआती विकल्प।
+
+Save Data · 16 kbit/s:
+कम bitrate वाला विकल्प। कमजोर data connection पर आजमा सकते हैं।
+
+Satellite Terminal · 10 kbit/s:
+और कम target bitrate। यह satellite hardware activate नहीं करता। वास्तविक
+external terminal इस्तेमाल कर रहे हों तो authorised voice-capable IP plan,
+उसका Wi-Fi और जरूरी consent चाहिए। Messaging-only/constrained path पर app
+live voice रोक सकता है। Beta underlying satellite route verify नहीं करता।
+
+ये लगभग audio payload targets हैं। Total Internet खपत में incoming/outgoing
+audio, network overhead और signalling भी जुड़ते हैं। कम bitrate का मतलब
+zero data या free satellite calling नहीं है।
+
+============================================================
+14. रोज दोबारा कैसे चालू करें?
+============================================================
+
+अगर server बंद हो गया है या फोन restart हुआ है, Termux खोलें:
+
+cd ~/satellitecall-termux-ngrok
+
+python start.py
+
+फिर final URL और public health check देखें। Android app खोलें।
+बिना जरूरत नया device account न बनाएँ।
+
+ध्यान दें:
+पुराना HTTPS address चालू रहे और वही account database इस्तेमाल हो तो existing
+device account चल सकता है। यदि endpoint बदल गया है तो पुराना app setup अपने
+आप नए endpoint पर नहीं जाता।
+
+इस APK में account बनने के बाद स्पष्ट “Edit server address” option नहीं मिला।
+इसलिए stable domain/endpoint रखें। Server/URL migration को routine restart
+की तरह न मानें। Database/token पहचान का भी ध्यान रखना पड़ता है।
+
+App का data साफ करना connection fix का पहला उपाय नहीं है। इससे local account,
+contacts और history खो सकते हैं, जबकि पुराना server account अपने आप delete
+नहीं होता। Account हटाना हो तो पहले app का सही deletion विकल्प समझें।
+
+============================================================
+15. Server बंद कैसे करें? फोन sleep होने पर क्या करें?
+============================================================
+
+जिस Termux session में python start.py चला है, वहाँ Ctrl+C दबाएँ।
+Termux की extra-keys row में CTRL इस्तेमाल कर सकते हैं।
+Launcher अपने शुरू किए processes रोकने की कोशिश करता है। किसी दूसरे session
+से पहले से चल रहे server/tunnel को वह जरूरी नहीं बंद करे।
+
+Testing के समय:
+- होस्ट को Force stop न करें।
+- Internet और पर्याप्त battery रखें।
+- यदि Android Termux को suspend कर रहा हो तो उसकी battery restrictions देखें।
+- जरूरत हो तो, आपके Termux build में उपलब्ध होने पर, “termux-wake-lock”
+  command उपयोग कर सकते हैं। काम पूरा होने पर “termux-wake-unlock” करें।
+  Wake lock से battery खपत बढ़ सकती है और यह process survival की guarantee नहीं।
+
+कॉल तभी तक चलने की गारंटी नहीं है जब तक आप काटें:
+Network, Android restrictions, server failure और relay availability असर डालते
+हैं। दिए server code में ringing लगभग 55 seconds, accepted call lifetime
+8 hours और participant activity गायब रहने पर लगभग 135 seconds का active
+lease है। इसलिए इसे unlimited always-connected service न समझें।
+
+============================================================
+16. सामान्य errors और उनके सीधे उपाय
+============================================================
+
+A. “python: command not found”
+चलाएँ:
+pkg install python
+
+B. “can't open file ... start.py”
+गलत folder में हैं। चलाएँ:
+cd ~/satellitecall-termux-ngrok
+ls
+फिर start.py दिखने पर:
+python start.py
+
+C. “ngrok command nahi mili” / “ngrok: command not found”
+ngrok install/PATH और version जाँचें:
+ngrok version
+सिर्फ ZIP download करने से ngrok command install नहीं होती।
+
+D. ngrok authentication error
+अपने account का सही authtoken configuration करें। Placeholder या दूसरे का
+public token इस्तेमाल न करें। असली error के लिए ngrok log पढ़ें।
+
+E. “Ek ngrok tunnel doosre port par chal raha hai”
+पुराना tunnel किसी दूसरे port पर है। उसके अपने Termux session में Ctrl+C
+करें। फिर इस project में python start.py दोबारा चलाएँ। Random processes को
+बिना पहचान बंद न करें। इस launcher का local target port 8080 है।
+
+F. “Public server check confirm nahi hua”
+Host Internet, server process और tunnel जाँचें। Browser में /healthz खोलें।
+नीचे log commands इस्तेमाल करें। केवल printed link देखकर success न मानें।
+
+G. “Enter the HTTPS server address without a path”
+App में केवल https:// वाला base host डालें। /healthz, /v1, GitHub URL,
+query या token हटाएँ। Server address का field contact code के लिए नहीं है।
+
+H. “Unexpected server response”
+Endpoint JSON के बजाय warning/login/HTML दे सकता है। सही tunnel/host और
+/healthz check करें। इस ऐप में ngrok-skip-browser-warning request header
+नहीं मिला, हालाँकि launcher health check उसे भेजता है। इसलिए launcher की
+सफलता अकेले APK requests की सफलता साबित नहीं करती।
+Browser में warning पार करने से app की request हमेशा ठीक हो जाएगी, यह दावा
+नहीं किया जा सकता। जरूरत हो तो compatible stable HTTPS deployment इस्तेमाल करें।
+
+I. “Contact unavailable”
+Code सही है? दोनों same server पर हैं? उस account को delete तो नहीं किया?
+Display name नहीं, असली 20-character contact code डालें।
+
+J. “Contact is offline”
+दूसरे व्यक्ति से SatelliteCall खोलने को कहें। Internet और signalling status
+जाँचें। सिर्फ Android app install होना online होना नहीं है।
+
+K. Call button नहीं दब रहा
+अपना server connection online है या नहीं देखें। App पहले से request submit
+कर रहा हो तो थोड़ा इंतजार करें। Public health check और दोनों phones का URL देखें।
+
+L. Call लगती है लेकिन आवाज़ नहीं आती
+दोनों का microphone permission, Mute state और सही audio route देखें।
+Bluetooth temporarily अलग करके earpiece test करें। दोनों अलग mobile networks
+पर हों और ringing के बाद media न जुड़े तो TURN relay की जरूरत पड़ सकती है।
+
+M. Call बार-बार टूटती है
+दोनों links, host uptime, Termux suspension, ngrok errors और restrictive NAT
+के लिए TURN जाँचें। Automatic से शुरू करें; कमजोर data पर Save Data आजमाएँ।
+Profile बदलना unavailable server या broken media routing का पूरा fix नहीं है।
+
+N. APK parsing/install error
+ZIP के बजाय अंदर वाला पूरा APK खोलें। Download अधूरा न हो। इस inspected APK
+का minimum Android API 26 यानी Android 8.0 है। Exact Android error पढ़ें;
+इंस्टॉल न होने की हर समस्या permission से नहीं होती।
+
+============================================================
+17. Logs कैसे देखें?
+============================================================
+
+अगर launcher वाला session चल रहा है तो उसे केवल logs देखने के लिए बंद न करें।
+Termux में दूसरा session खोलकर ये commands चला सकते हैं:
+
+tail -n 20 ~/.satellitecall-ngrok/server.log
+
+tail -n 20 ~/.satellitecall-ngrok/ngrok.log
+
+Local backend check, जब server चालू हो:
+
+curl http://127.0.0.1:8080/healthz
+
+Public HTTPS check, अपने असली host के साथ:
+
+curl -H "ngrok-skip-browser-warning: 1" https://YOUR_ACTUAL_HOST/healthz
+
+यहाँ YOUR_ACTUAL_HOST placeholder है। अपनी ngrok domain लगाएँ।
+यह header वाला command diagnostic है; यह APK के अंदर header नहीं जोड़ता।
+Error भेजते समय token/credentials छिपाएँ।
+
+============================================================
+18. TURN relay क्या है और कब चाहिए?
+============================================================
+
+Python server और ngrok मुख्यतः call signalling पहुँचाते हैं। WebRTC audio को
+दोनों devices के बीच usable media route चाहिए। कुछ NAT/firewall networks पर
+सीधा route नहीं बनता। वहाँ TURN server media relay कर सकता है।
+
+इस repo में TURN hosting अपने आप install नहीं होती। Backend में
+SATCALL_TURN_URLS और SATCALL_TURN_SECRET configuration का समर्थन है।
+दोनों values और TURN server का authentication setup आपस में मेल खाना चाहिए।
+
+इन environment variables को server चालू करने से पहले configure करना होता है।
+असल TURN service/operator के बिना placeholder values भरने से audio नहीं चलेगा।
+ngrok authtoken को TURN secret की जगह न रखें।
+
+============================================================
+19. Account और data के बारे में
+============================================================
+
+Default launcher database:
+~/.satellitecall-ngrok/satellitecall.sqlite3
+
+Launcher पहले के कुछ ज्ञात database locations से existing accounts वाला
+पुराना database चुन सकता है। Startup पर printed database path देखें।
+SATCALL_DB environment variable से operator अलग path भी चुन सकता है।
+
+सिर्फ database रखते रहने से खोया हुआ device bearer token वापस नहीं आता।
+जाँचे गए APK में account recovery/login सुविधा नहीं मिली।
+
+Server, local accounts और credentials का सुरक्षित प्रबंधन करें। Database,
+ngrok config, private tokens या keys GitHub पर upload न करें।
+
+Device account delete करने का तरीका:
+1) ऐप में Network tab खोलें।
+2) नीचे Account & privacy तक scroll करें।
+3) “Delete device account” चुनें और confirmation पढ़ें।
+4) Server online/reachable होना चाहिए।
+5) सफल request के बाद app local session और local call data साफ करता है।
+
+यह सामान्य reconnect button नहीं है। Deletion के बाद नया account/code चाहिए।
+Contact remove करना, history clear करना और server account delete करना अलग हैं।
+
+============================================================
+20. पहली call से पहले छोटा checklist
+============================================================
+
+[ ] फोन A और फोन B पर सही APK install है।
+[ ] होस्ट पर ngrok version चलता है और अपना authtoken configure है।
+[ ] start.py और server.py सही folder में हैं।
+[ ] python start.py चल रहा है।
+[ ] Local और public /healthz से सही JSON मिल रहा है।
+[ ] App में path के बिना वही base HTTPS URL दोनों phones पर है।
+[ ] दोनों के अपने अलग device accounts बने हैं।
+[ ] दूसरे व्यक्ति का असली contact code Add किया है।
+[ ] दोनों apps खुले हैं और Internet चालू है।
+[ ] Microphone permission है और Mute बंद है।
+[ ] Host server और ngrok call के दौरान बंद नहीं किए हैं।
+[ ] Ringing के बाद audio fail हो तो TURN/network path जाँचा है।
+
+============================================================
+21. सबसे छोटा याद रखने वाला क्रम
+============================================================
+
+होस्ट:
+Termux खोलें → project folder → python start.py → healthy HTTPS link कॉपी करें।
+
+दोनों फोन:
+SatelliteCall खोलें → same HTTPS link → अलग device accounts बनाएँ।
+
+कॉल:
+Code share करें → दूसरे का code Add करें → Call → Answer → बात → Hang up।
+
+SatelliteCall सामान्य mobile/landline numbers या emergency service को dial
+करने वाला app नहीं है। Internet/hosting/tunnel/relay/provider charges लागू हो
+सकते हैं।
+
+============================================================
+स्रोत और सत्यापन
+============================================================
+
+GitHub README:
+https://github.com/ykpathak126-hue/satellitecall-termux-ngrok/blob/main/README.md
+
+Launcher:
+https://github.com/ykpathak126-hue/satellitecall-termux-ngrok/blob/main/start.py
+
+Backend:
+https://github.com/ykpathak126-hue/satellitecall-termux-ngrok/blob/main/server.py
+
+APK वाला ZIP:
+https://github.com/ykpathak126-hue/satellitecall-termux-ngrok/blob/main/SatelliteCall-debug.zip
+
+Official Termux:
+https://f-droid.org/en/packages/com.termux/
+
+Official ngrok download और setup:
+https://ngrok.com/download/linux
+https://ngrok.com/docs/gateway/endpoints/agent-cli-quickstart
+
+GitHub ZIP के अंदर मिले APK का SHA-256:
+63cac9e1d12939e7cf60d0cccb98cf4b39dc3d86be08b3b3d1b5c25c2c6dfc7c
+
+गाइड UTF-8 हिंदी plain text में है। Commands को बदलकर हिंदी में नहीं लिखा
+गया है, ताकि आप उन्हें सीधे सही जगह copy/paste कर सकें।
+
+— समाप्त —
